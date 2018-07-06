@@ -1,0 +1,32 @@
+version: '3'
+
+services:
+    traefik:
+        image: traefik:alpine
+        command: --api --docker # Enables the web UI and tells Træfik to listen to docker
+        ports:
+            - "80:80"
+            - "443:443"
+            - "8080:8080"
+        volumes:
+            - /var/run/docker.sock:/var/run/docker.sock:ro
+            - ./traefik.toml:/etc/traefik/traefik.toml:ro
+            - ./.data/traefik/log/:/etc/traefik/log/
+            - ./keys:/etc/traefik/keys:ro
+
+    portainer:
+        image: portainer/portainer
+        ports:
+        - "9000:9000"
+        command: -H unix:///var/run/docker.sock
+        volumes:
+        - /var/run/docker.sock:/var/run/docker.sock
+        - portainer_data:/data
+
+volumes:
+  portainer_data:
+    
+networks:
+    default:
+        external:
+            name: app

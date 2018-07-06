@@ -1,0 +1,47 @@
+################################################################
+# Global configuration
+################################################################
+
+debug = false
+checkNewVersion = true
+logLevel = "ERROR"
+defaultEntryPoints = ["http", "https","ws","wss"]
+RootCAs = ["/etc/traefik/keys/dev.com/servercert.pem"]
+
+InsecureSkipVerify = true
+
+[entryPoints]
+    [entryPoints.http]
+    address = ":80"
+
+    [entryPoints.https]
+    address = ":443"
+        [entryPoints.https.tls]
+            [[entryPoints.https.tls.certificates]]
+            CertFile = "/etc/traefik/keys/dev.com/servercert.pem"
+            KeyFile = "/etc/traefik/keys/dev.com/serverkey.pem"
+            [[entryPoints.https.tls.certificates]]
+            CertFile = "/etc/traefik/keys/dev.localhost/servercert.pem"
+            KeyFile = "/etc/traefik/keys/dev.localhost/serverkey.pem"
+
+
+[traefikLog]
+filePath = "log/error.log"
+
+[accessLog]
+filePath = "log/access.log"
+
+################################################################
+# Web configuration backend
+################################################################
+
+# Enable web configuration backend
+[web]
+address = ":8080"
+
+################################################################
+# Docker configuration backend
+################################################################
+
+[docker]
+domain = "dev.com"
