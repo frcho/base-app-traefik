@@ -12,7 +12,6 @@ services:
             - /var/run/docker.sock:/var/run/docker.sock:ro
             - ./traefik.toml:/etc/traefik/traefik.toml:ro
             - ./.data/traefik/log/:/etc/traefik/log/
-            - ./keys:/etc/traefik/keys:ro
 
     portainer:
         image: portainer/portainer
@@ -22,6 +21,18 @@ services:
         volumes:
         - /var/run/docker.sock:/var/run/docker.sock
         - portainer_data:/data
+
+    mailhog:
+        # do not use in production!
+        image: mailhog/mailhog:latest
+        environment:
+          - MH_STORAGE=maildir
+        volumes:
+          - ./docker/mailhog/maildir:/maildir:rw,delegated
+        ports:
+          - "8025:8025"
+          - "1025:1025"     
+            
 
 volumes:
   portainer_data:

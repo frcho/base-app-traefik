@@ -10,7 +10,7 @@ else
 fi
 
 echo "Starting container"
-
+service apache2 stop
 docker-compose up -d
 
 echo "Container started"

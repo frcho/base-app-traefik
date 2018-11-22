@@ -6,7 +6,6 @@ debug = false
 checkNewVersion = true
 logLevel = "ERROR"
 defaultEntryPoints = ["http", "https","ws","wss"]
-RootCAs = ["/etc/traefik/keys/dev.com/servercert.pem"]
 
 InsecureSkipVerify = true
 
@@ -17,13 +16,6 @@ InsecureSkipVerify = true
     [entryPoints.https]
     address = ":443"
         [entryPoints.https.tls]
-            [[entryPoints.https.tls.certificates]]
-            CertFile = "/etc/traefik/keys/dev.com/servercert.pem"
-            KeyFile = "/etc/traefik/keys/dev.com/serverkey.pem"
-            [[entryPoints.https.tls.certificates]]
-            CertFile = "/etc/traefik/keys/dev.localhost/servercert.pem"
-            KeyFile = "/etc/traefik/keys/dev.localhost/serverkey.pem"
-
 
 [traefikLog]
 filePath = "log/error.log"
@@ -44,4 +36,4 @@ address = ":8080"
 ################################################################
 
 [docker]
-domain = "dev.com"
+domain = "example.com"
