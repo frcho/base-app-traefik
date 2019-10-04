@@ -2,10 +2,8 @@ version: '3'
 
 services:
     traefik:
-        image: traefik:alpine
-        restart: always        
-        command: --api --docker # Enables the web UI and tells Træfik to listen to docker
-        #network_mode: "host"
+        image: traefik:v2.0.1
+        restart: always     
         ports:
             - "80:80"
             - "443:443"
@@ -14,6 +12,9 @@ services:
             - /var/run/docker.sock:/var/run/docker.sock:ro
             - ./traefik.toml:/etc/traefik/traefik.toml:ro
             - ./.data/traefik/log/:/var/log/traefik/
+        labels:
+            - "traefik.enable=true"
+        container_name: traefik            
 
     portainer:
         image: portainer/portainer
@@ -26,7 +27,6 @@ services:
         - portainer_data:/data
         labels:
             - traefik.enable=true
-            - traefik.default.protocol=http
 
     mailhog:
         # do not use in production!
@@ -41,7 +41,6 @@ services:
           - "1025:1025"
         labels:
             - traefik.enable=true
-            - traefik.default.protocol=http          
 
 volumes:
   portainer_data:
