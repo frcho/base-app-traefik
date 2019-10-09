@@ -1,57 +1,27 @@
 [global]
   sendAnonymousUsage = false
 
-[entrypoints]
-  [entrypoints.http]
-    address = ":80"
-
-  [entrypoints.https]
-    address = ":443"
-
-[providers]
-  [providers.file]
-      directory = "/etc/traefik/config.d"
-  [providers.docker]
-    # Connection to docker host system (docker.sock)
-    endpoint = "unix:///var/run/docker.sock"
-    watch = true
-    # This will hide all docker containers that don't have explicitly  
-    # set label to "enable"
-    exposedbydefault = false
-    #network = "traefik_proxy"
-
 [api]
   insecure = true
 
-################################################################
-# Traefik logs configuration
-################################################################
+[entrypoints]
+  [entrypoints.web]
+    address = ":80"
 
-# Traefik logs
-# Enabled by default and log to stdout
-#
-# Optional
-#
-[log]
+  [entrypoints.web-secure]
+    address = ":443"
 
-  # Log level
-  #
-  # Optional
-  # Default: "ERROR"
-  #
+[log]    
   level = "DEBUG"
 
-  # Sets the filepath for the traefik log. If not specified, stdout will be used.
-  # Intermediate directories are created if necessary.
-  #
-  # Optional
-  # Default: os.Stdout
-  #
-  # filePath = "log/traefik.log"
-
-  # Format is either "json" or "common".
-  #
-  # Optional
-  # Default: "common"
-  #
-  # format = "json"
+[providers]
+  [providers.docker]
+    # Connection to docker host system (docker.sock)
+    endpoint = "unix:///var/run/docker.sock"
+    # This will hide all docker containers that don't have explicitly  
+    # set label to "enable"
+    exposedbydefault = false
+    watch = true
+  [providers.file]
+      directory = "/etc/traefik/config.d"
+      watch = true

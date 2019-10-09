@@ -1,0 +1,23 @@
+tls:
+  certificates:
+    # - certFile: /etc/traefik/ssl/mkcert+6.pem
+    #   keyFile: /etc/traefik/ssl/mkcert+6-key.pem
+    - certFile: /etc/traefik/ssl/localhost+2.pem
+      keyFile: /etc/traefik/ssl/localhost+2-key.pem
+## Dynamic configuration
+http:
+  routers:
+    traefik:
+      entrypoints: ["traefik"]
+      rule: "HostRegexp(`{host:.+}`)"
+      middlewares: ["redirect","auth"]
+      service: "api@internal"
+      priority: 1
+      tls: {}
+    # request:
+    #   entrypoints: ["web"]
+    #   rule: "Host(`whoami.localhost`)"
+    #   middlewares: ["redirect","auth"]
+    #   service: "noop"
+    #   priority: 1
+    #   tls: {}

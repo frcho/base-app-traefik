@@ -18,16 +18,21 @@ services:
         volumes:
             - /var/run/docker.sock:/var/run/docker.sock:ro
             - ./traefik.yaml:/etc/traefik/traefik.yaml:ro
-            # - ./traefik.toml:/etc/traefik/traefik.toml:ro
             - ./conf.d/:/etc/traefik/conf.d/
+            - ./cert/:/etc/traefik/ssl:ro
+            # - ./traefik.toml:/etc/traefik/traefik.toml:ro
             # - ./.data/traefik/log/:/var/log/traefik/
         labels:
             - "traefik.enable=true"
             - "traefik.http.routers.traefik.rule=Host(`traefik.localhost`)"          
-            - "traefik.http.routers.traefik.middlewares=auth@file"
+            # - "traefik.http.routers.traefik.entrypoints=web-secure"
+            # - "traefik.http.routers.traefik.tls=true"
+            # - "traefik.http.routers.traefik.service=api@internal"
+            # - "traefik.http.routers.traefik.middlewares=auth@file"
             # - "traefik.http.routers.traefik.middlewares=redirect@file"
+
+
             - "traefik.http.services.traefik.loadbalancer.server.port=8080"
-            # - "traefik.http.middlewares.auth.basicauth.users=user:$$apr1$$q8eZFHjF$$Fvmkk//V6Btlaf2i/ju5n/" # user/password            
 
     my-app:
         image: containous/whoami:v1.3.0
@@ -35,10 +40,24 @@ services:
               - --port=8082 # Our service listens on 8082        
         labels:
           - "traefik.enable=true"
-          - "traefik.http.routers.my-app.rule=Host(`whoami.docker.localhost`)"          
-          - "traefik.http.services.my-app.loadbalancer.server.port=8082"
-          - "traefik.http.routers.my-app.middlewares=auth@file"
+          - "traefik.http.routers.request.rule=Host(`whoami.localhost`)"          
+          - "traefik.http.routers.request.middlewares=auth@file"
+          - "traefik.http.routers.request.middlewares=redirect@file"
+          - "traefik.http.services.request.loadbalancer.server.port=8082"
           # - "traefik.http.middlewares.auth.basicauth.users=user:$$apr1$$q8eZFHjF$$Fvmkk//V6Btlaf2i/ju5n/" # user/password
+ 
+    # Create a docker registry
+    # to host docker images
+    #
+    # registry:
+    #   restart: always
+    #   image: registry:2
+    #   container_name: registry   
+    #   labels:
+    #       - "traefik.enable=true"
+    #       - "traefik.http.services.registry.loadbalancer.server.port=5000"
+    #       - "traefik.http.routers.registry.rule=Host(`registry.localhost`)"
+    #       - "traefik.http.middlewares.test-auth.basicauth.users=test:$$apr1$$H6uskkkW$$IgXLP6ewTrSuBkTrqE8wj/,test2:$$apr1$$d9hr9HBB$$4HxwgUir3HP4EsggP/QNo0"
 
 
     # portainer:

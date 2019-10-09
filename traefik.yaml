@@ -1,6 +1,9 @@
+global:
+  sendAnonymousUsage: false
+
 api:
   dashboard: true
-  insecure: true
+  # insecure: true
 
 entryPoints:
   web:
@@ -12,6 +15,12 @@ entryPoints:
 
 metrics:
   prometheus: {}
+
+# static configuration
+log:
+  level: DEBUG
+  filePath: /tmp/traefik.log
+  format: common
 
 accessLog: {}
 
