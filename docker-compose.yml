@@ -25,66 +25,34 @@ services:
         labels:
             - "traefik.enable=true"
             - "traefik.http.routers.traefik.rule=Host(`traefik.localhost`)"          
-            # - "traefik.http.routers.traefik.entrypoints=web-secure"
-            # - "traefik.http.routers.traefik.tls=true"
-            # - "traefik.http.routers.traefik.service=api@internal"
-            # - "traefik.http.routers.traefik.middlewares=auth@file"
-            # - "traefik.http.routers.traefik.middlewares=redirect@file"
-
-
+            - "traefik.http.routers.traefik.middlewares=https-only@file"
             - "traefik.http.services.traefik.loadbalancer.server.port=8080"
 
-    my-app:
-        image: containous/whoami:v1.3.0
-        command:
-              - --port=8082 # Our service listens on 8082        
+    portainer:
+        image: portainer/portainer
+        restart: always        
+        ports:
+        - "9000:9000"
+        command: -H unix:///var/run/docker.sock
+        volumes:
+        - /var/run/docker.sock:/var/run/docker.sock
+        - portainer_data:/data
         labels:
-          - "traefik.enable=true"
-          - "traefik.http.routers.request.rule=Host(`whoami.localhost`)"          
-          - "traefik.http.routers.request.middlewares=auth@file"
-          - "traefik.http.routers.request.middlewares=redirect@file"
-          - "traefik.http.services.request.loadbalancer.server.port=8082"
-          # - "traefik.http.middlewares.auth.basicauth.users=user:$$apr1$$q8eZFHjF$$Fvmkk//V6Btlaf2i/ju5n/" # user/password
- 
-    # Create a docker registry
-    # to host docker images
-    #
-    # registry:
-    #   restart: always
-    #   image: registry:2
-    #   container_name: registry   
-    #   labels:
-    #       - "traefik.enable=true"
-    #       - "traefik.http.services.registry.loadbalancer.server.port=5000"
-    #       - "traefik.http.routers.registry.rule=Host(`registry.localhost`)"
-    #       - "traefik.http.middlewares.test-auth.basicauth.users=test:$$apr1$$H6uskkkW$$IgXLP6ewTrSuBkTrqE8wj/,test2:$$apr1$$d9hr9HBB$$4HxwgUir3HP4EsggP/QNo0"
+            - traefik.enable=true
 
-
-    # portainer:
-    #     image: portainer/portainer
-    #     restart: always        
-    #     ports:
-    #     - "9000:9000"
-    #     command: -H unix:///var/run/docker.sock
-    #     volumes:
-    #     - /var/run/docker.sock:/var/run/docker.sock
-    #     - portainer_data:/data
-    #     labels:
-    #         - traefik.enable=true
-
-    # mailhog:
-    #     # do not use in production!
-    #     image: mailhog/mailhog:latest
-    #     restart: always        
-    #     environment:
-    #       - MH_STORAGE=maildir
-    #     volumes:
-    #       - ./docker/mailhog/maildir:/maildir:rw,delegated
-    #     ports:
-    #       - "8025:8025"
-    #       - "1025:1025"
-    #     labels:
-    #         - traefik.enable=true
+    mailhog:
+        # do not use in production!
+        image: mailhog/mailhog:latest
+        restart: always        
+        environment:
+          - MH_STORAGE=maildir
+        volumes:
+          - ./docker/mailhog/maildir:/maildir:rw,delegated
+        ports:
+          - "8025:8025"
+          - "1025:1025"
+        labels:
+            - traefik.enable=true
 
 volumes:
   portainer_data:
