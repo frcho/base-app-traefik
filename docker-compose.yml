@@ -2,15 +2,10 @@ version: '3.3'
 
 services:
     traefik:
-        image: traefik:v2.0.1
+        image: traefik:v2.0.2
         container_name: traefik     
         hostname:       traefik       
         restart: always     
-        # command: 
-        #     - --entrypoints.web.address=:80 
-        #     - --entrypoints.web-secure.address=:443
-        #     - --providers.docker 
-        #     - --api.insecure
         ports:
             - "80:80"
             - "443:443"
@@ -19,43 +14,13 @@ services:
             - /var/run/docker.sock:/var/run/docker.sock:ro
             - ./traefik.yaml:/etc/traefik/traefik.yaml:ro
             - ./conf.d/:/etc/traefik/conf.d/
-            - ./cert/:/etc/traefik/ssl:ro
-            # - ./traefik.toml:/etc/traefik/traefik.toml:ro
-            # - ./.data/traefik/log/:/var/log/traefik/
+            - ./acme:/etc/traefik/acme
+            # - ./cert/:/etc/traefik/ssl:ro            
         labels:
             - "traefik.enable=true"
-            - "traefik.http.routers.traefik.rule=Host(`traefik.localhost`)"          
+            - "traefik.http.routers.traefik.rule=Host(`${DOMAIN_NAME}`)"          
             - "traefik.http.routers.traefik.middlewares=https-only@file"
             - "traefik.http.services.traefik.loadbalancer.server.port=8080"
-
-    portainer:
-        image: portainer/portainer
-        restart: always        
-        ports:
-        - "9000:9000"
-        command: -H unix:///var/run/docker.sock
-        volumes:
-        - /var/run/docker.sock:/var/run/docker.sock
-        - portainer_data:/data
-        labels:
-            - traefik.enable=true
-
-    mailhog:
-        # do not use in production!
-        image: mailhog/mailhog:latest
-        restart: always        
-        environment:
-          - MH_STORAGE=maildir
-        volumes:
-          - ./docker/mailhog/maildir:/maildir:rw,delegated
-        ports:
-          - "8025:8025"
-          - "1025:1025"
-        labels:
-            - traefik.enable=true
-
-volumes:
-  portainer_data:
     
 networks:
     default:

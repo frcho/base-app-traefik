@@ -24,13 +24,13 @@ log:
 
 accessLog: {}
 
-# certificatesResolvers:
-#   le:
-#     acme:
-#       email: mail@simonszu.de
-#       storage: acme.json
-#       httpChallenge:
-#         entryPoint: web
+certificatesResolvers:
+  le:
+    acme:
+      email: webmaster@uva3.com
+      storage: "/etc/traefik/acme/acme.json"
+      httpChallenge:
+        entryPoint: web
 
 providers:
   docker:
