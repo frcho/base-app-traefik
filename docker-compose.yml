@@ -19,6 +19,7 @@ services:
         labels:
             - "traefik.enable=true"
             - "traefik.http.routers.traefik.rule=Host(`${DOMAIN_NAME}`)"          
+            - "traefik.http.routers.traefik.tls.certresolver=le"
             - "traefik.http.routers.traefik.middlewares=https-only@file"
             - "traefik.http.services.traefik.loadbalancer.server.port=8080"
     
