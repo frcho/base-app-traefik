@@ -6,9 +6,9 @@ api:
   insecure: true
 
 entryPoints:
-  web:
+  http:
     address: ":80"
-  web-secure: 
+  https: 
     address: ":443"
   traefik:
     address: ":8080"
@@ -40,7 +40,7 @@ certificatesResolvers:
       #caServer: https://acme-staging-v02.api.letsencrypt.org/directory
       #***
       httpChallenge:
-        entryPoint: web
+        entryPoint: https
 
 providers:
   docker:
