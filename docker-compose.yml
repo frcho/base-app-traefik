@@ -17,11 +17,13 @@ services:
             - /var/run/docker.sock:/var/run/docker.sock:ro
         labels:
             - "traefik.enable=true"
-            - "traefik.http.routers.traefik.rule=Host(`${DOMAIN_NAME}`)"  
-            - "traefik.http.routers.traefik.entrypoints=http"
-            - "traefik.http.routers.traefik.middlewares=redirect@file"
-            - "traefik.http.services.traefik.loadbalancer.server.port=8080"
-    
+            - "traefik.http.routers.traefik-api.rule=Host(`${DOMAIN_NAME}`)"
+            - "traefik.http.routers.traefik-api.entrypoints=http"
+            - "traefik.http.routers.traefik-api.middlewares=redirect@file"
+            - "traefik.http.routers.traefik-api-s.rule=Host(`${DOMAIN_NAME}`)"
+            - "traefik.http.routers.traefik-api-s.entrypoints=https"
+            - "traefik.http.routers.traefik-api-s.tls.certresolver=le"
+            - "traefik.http.services.traefik-api.loadbalancer.server.port=8080"     
 networks:
     default:
         external:
