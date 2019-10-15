@@ -1,0 +1,10 @@
+http:
+  routers:
+    DefaultHTTPSRedirect:
+      entrypoints: ["http"]
+      rule: "PathPrefix(`/`)"
+      middlewares:
+        - redirectScheme
+      service: "api@internal"
+      priority: 1
+      tls: {}

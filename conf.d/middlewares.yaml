@@ -9,4 +9,5 @@ http:
     redirect:
       redirectScheme:
         scheme: https
+        permanent: true
            
