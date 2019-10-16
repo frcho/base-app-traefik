@@ -12,14 +12,11 @@ services:
             - "8080:8080"
         volumes:
             - ./traefik.yaml:/etc/traefik/traefik.yaml:ro
-            - ./acme:/etc/traefik/acme
             - ./conf.d/:/etc/traefik/conf.d/
             - /var/run/docker.sock:/var/run/docker.sock:ro
         labels:
             - "traefik.enable=true"
             - "traefik.http.routers.${PROJECT_NAME}.rule=Host(`${DOMAIN_NAME}`)"
-            - "traefik.http.routers.${PROJECT_NAME}.middlewares=redirect@file"
-            - "traefik.http.routers.${PROJECT_NAME}.tls.certresolver=le"
             - "traefik.http.services.${PROJECT_NAME}.loadbalancer.server.port=8080" 
 networks:
     default:

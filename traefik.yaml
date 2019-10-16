@@ -24,24 +24,6 @@ log:
 
 accessLog: {}
 
-certificatesResolvers:
-  le:
-    acme:
-      email: webmaster@uva3.com
-      storage: "/etc/traefik/acme/acme.json"
-      #If you uncommented the 'caserver' line, 
-      #you will get an SSL error, but if you display the certificate 
-      #and see it was emitted by Fake LE Intermediate X1 then it means 
-      #all is good.
-      #(It is the staging environment intermediate certificate used by let's encrypt).
-      #You can now safely comment the acme.caserver line, remove the letsencrypt/acme.json
-      #file and restart Traefik to issue a valid certificate.
-      #***
-      #caServer: https://acme-staging-v02.api.letsencrypt.org/directory
-      #***
-      httpChallenge:
-        entryPoint: http
-
 providers:
   docker:
     endpoint: "unix:///var/run/docker.sock"
