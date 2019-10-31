@@ -1,0 +1,35 @@
+global:
+  sendAnonymousUsage: false
+
+api:
+  dashboard: true
+  insecure: true
+
+entryPoints:
+  http:
+    address: ":80"
+  https: 
+    address: ":443"
+  traefik:
+    address: ":8080"
+
+metrics:
+  prometheus: {}
+
+# static configuration
+log:
+  level: DEBUG
+  filePath: /tmp/traefik.log
+  format: common
+
+accessLog: {}
+
+providers:
+  docker:
+    endpoint: "unix:///var/run/docker.sock"
+    exposedbydefault: false
+    watch: true
+
+  file:
+    directory: /etc/traefik/conf.d/
+    watch: true

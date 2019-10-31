@@ -1,39 +1,27 @@
-################################################################
-# Global configuration
-################################################################
+[global]
+  sendAnonymousUsage = false
 
-debug = false
-checkNewVersion = true
-logLevel = "DEBUG"
-defaultEntryPoints = ["http"]
+[api]
+  insecure = true
 
-################################################################
-# Entry-points configuration
-################################################################
-[entryPoints]
-  [entryPoints.http]
+[entrypoints]
+  [entrypoints.web]
     address = ":80"
 
-[traefikLog]
-filePath = "/var/log/traefik/error.log"
+  [entrypoints.web-secure]
+    address = ":443"
 
-[accessLog]
-filePath = "/var/log/traefik/access.log"
+[log]    
+  level = "DEBUG"
 
-################################################################
-# Web configuration backend
-################################################################
-
-# Enable web configuration backend
-[web]
-address = ":8080"
-
-################################################################
-# Docker configuration backend
-################################################################
-
-[docker]
-domain = "docker.localhost"
-watch = true
-exposedbydefault = false
-endpoint = "unix:///var/run/docker.sock"
+[providers]
+  [providers.docker]
+    # Connection to docker host system (docker.sock)
+    endpoint = "unix:///var/run/docker.sock"
+    # This will hide all docker containers that don't have explicitly  
+    # set label to "enable"
+    exposedbydefault = false
+    watch = true
+  [providers.file]
+      directory = "/etc/traefik/config.d"
+      watch = true
