@@ -2,10 +2,10 @@ version: '3.3'
 
 services:
     traefik:
-        image: traefik:v2.0.2
-        container_name: ${PROJECT_NAME}     
-        hostname:       ${PROJECT_NAME}       
-        restart: always     
+        image: traefik:v2.1.3
+        container_name: ${PROJECT_NAME}
+        hostname:       ${PROJECT_NAME}
+        restart: always
         ports:
             - "80:80"
             - "443:443"
