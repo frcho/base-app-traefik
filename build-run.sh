@@ -2,7 +2,7 @@
 
 
 if  docker network ls | grep -w app
-then 
+then
     echo "Network with name app already exists"
 else
     echo "Creating network app"
@@ -10,8 +10,6 @@ else
 fi
 
 echo "Starting container"
-# service apache2 stop
 docker-compose up -d
-
 echo "Container started"
 

@@ -1,10 +1,10 @@
-version: '3.7'
+version: '3.8'
 
 services:
     traefik:
         depends_on:
             - dockerproxy
-        image: traefik:v2.3.2
+        image: traefik:v2.6.1
         container_name: ${PROJECT_NAME}
         hostname:       ${PROJECT_NAME}
         restart: always
@@ -53,19 +53,18 @@ services:
         image: mailhog/mailhog:latest
         restart: always
         environment:
-          - MH_STORAGE=maildir
+            - MH_STORAGE=maildir
         volumes:
-          - ./docker/mailhog/maildir:/maildir:rw,delegated
+            - ./docker/mailhog/maildir:/maildir:rw,delegated
         ports:
-          - "8025:8025"
-          - "1025:1025"
+            - "8025:8025"
+            - "1025:1025"
 
 volumes:
     portainer_data:
 
 networks:
     default:
-        external:
-            name: app
+        name: app
     traefik:
         internal: true
