@@ -1,8 +1,10 @@
-version: '3.3'
+version: '3.8'
 
 services:
     traefik:
-        image: traefik:v2.3.2
+        depends_on:
+            - dockerproxy
+        image: traefik:v2.6.1
         container_name: ${PROJECT_NAME}
         hostname:       ${PROJECT_NAME}
         restart: always
@@ -11,37 +13,57 @@ services:
             - "443:443"
             - "8080:8080"
         volumes:
+            #- /etc/localtime:/etc/localtime:ro
+            #- /etc/timezone:/etc/timezone:ro
             - ./traefik.yaml:/etc/traefik/traefik.yaml:ro
             - ./conf.d/:/etc/traefik/conf.d/
-            - /var/run/docker.sock:/var/run/docker.sock:ro
+            # - /var/run/docker.sock:/var/run/docker.sock:ro
         labels:
             - "traefik.enable=true"
             - "traefik.http.routers.${PROJECT_NAME}.rule=Host(`${DOMAIN_NAME}`)"
-            - "traefik.http.services.${PROJECT_NAME}.loadbalancer.server.port=8080" 
+            - "traefik.http.services.${PROJECT_NAME}.loadbalancer.server.port=8080"
+        networks:
+            - default
+            - traefik
+
+    dockerproxy:
+        environment:
+            CONTAINERS: 1
+        image: tecnativa/docker-socket-proxy
+        restart: always
+        networks:
+            - traefik
+        ports:
+            - 2375
+        volumes:
+            - "/var/run/docker.sock:/var/run/docker.sock"
+
     portainer:
         image: portainer/portainer
+        restart: always
         ports:
-        - "9000:9000"
+             - "9000:9000"
         command: -H unix:///var/run/docker.sock
         volumes:
-        - /var/run/docker.sock:/var/run/docker.sock
-        - portainer_data:/data
-
+            - /var/run/docker.sock:/var/run/docker.sock
+            - portainer_data:/data
     mailhog:
         # do not use in production!
         image: mailhog/mailhog:latest
+        restart: always
         environment:
-          - MH_STORAGE=maildir
+            - MH_STORAGE=maildir
         volumes:
-          - ./docker/mailhog/maildir:/maildir:rw,delegated
+            - ./docker/mailhog/maildir:/maildir:rw,delegated
         ports:
-          - "8025:8025"
-          - "1025:1025"
+            - "8025:8025"
+            - "1025:1025"
 
 volumes:
     portainer_data:
 
 networks:
     default:
-        external:
-            name: app
+        name: app
+    traefik:
+        internal: true

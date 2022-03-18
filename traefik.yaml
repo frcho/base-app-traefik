@@ -8,7 +8,7 @@ api:
 entryPoints:
   http:
     address: ":80"
-  https: 
+  https:
     address: ":443"
   traefik:
     address: ":8080"
@@ -26,7 +26,9 @@ accessLog: {}
 
 providers:
   docker:
-    endpoint: "unix:///var/run/docker.sock"
+    # endpoint: "unix:///var/run/docker.sock"
+    endpoint: "tcp://dockerproxy:2375"
+    network: "traefik"
     exposedbydefault: false
     watch: true
 
