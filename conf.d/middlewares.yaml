@@ -10,3 +10,28 @@ http:
       redirectScheme:
         scheme: https
         permanent: true
+    # traefik-plugin-fail2ban:
+    #   plugin:
+    #     traefik-plugin-fail2ban:
+    #         alwaysAllowed:
+    #             ip: ::1,127.0.0.1
+    #         # alwaysDenied:
+    #         #     ip: 192.168.0.0/24
+    #         enabled: "true"
+    #         logLevel: INFO
+    #         rules:
+    #             banTime: 24h
+    #             findTime: 5m
+    #             maxRetries: "4"
+    #             response:
+    #                 statusCodes: 400-401,403-499
+    # traefik-plugin-blockuseragent:
+    #   plugin:
+    #     traefik-plugin-blockuseragent:
+    #       Regex:
+    #         - "ClaudeBot"
+    # traefik-block-ua:
+    #   plugin:
+    #     traefik-block-ua:
+    #       userAgents:
+    #         - PostmanRuntime

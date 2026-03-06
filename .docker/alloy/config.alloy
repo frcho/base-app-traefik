@@ -1,0 +1,234 @@
+// =====================================================
+// OTLP RECEIVER (Entrada desde PHP)
+// =====================================================
+otelcol.receiver.otlp "default" {
+  http {
+    endpoint = "0.0.0.0:4318"
+  }
+  grpc {
+    endpoint = "0.0.0.0:4317"
+  }
+
+  output {
+    metrics = [otelcol.processor.memory_limiter.default.input, otelcol.exporter.debug.audit.input]
+    traces  = [otelcol.processor.memory_limiter.default.input]
+  }
+}
+
+// =====================================================
+// MEMORY LIMITER (Protección contra OOM)
+// =====================================================
+otelcol.processor.memory_limiter "default" {
+  check_interval = "1s"
+  limit_percentage = 75
+  spike_limit_percentage = 20
+
+  output {
+    metrics = [otelcol.processor.attributes.enrich.input]
+    traces  = [otelcol.processor.attributes.enrich.input]
+  }
+}
+
+// =====================================================
+// ATTRIBUTES PROCESSOR (Enriquecimiento)
+// =====================================================
+otelcol.processor.attributes "enrich" {
+  action {
+    key = "deployment.environment"
+    action = "insert"
+    value = env("ENVIRONMENT")
+  }
+
+  output {
+    metrics = [otelcol.processor.deltatocumulative.convert.input]
+    traces  = [otelcol.processor.batch.default.input]
+  }
+}
+
+// =====================================================
+// BATCH PROCESSOR (Performance para traces)
+// =====================================================
+otelcol.processor.batch "default" {
+  timeout = "10s"
+  send_batch_size = 1024
+  send_batch_max_size = 2048
+
+  output {
+    traces = [otelcol.exporter.otlp.tempo.input]
+  }
+}
+
+// =====================================================
+// DELTA TO CUMULATIVE PROCESSOR (Fix para Prometheus)
+// =====================================================
+otelcol.processor.deltatocumulative "convert" {
+  output {
+    metrics = [otelcol.exporter.prometheus.default.input]
+  }
+}
+
+// =====================================================
+// METRICS → PROMETHEUS (Traductor)
+// =====================================================
+otelcol.exporter.prometheus "default" {
+  forward_to = [prometheus.remote_write.local.receiver]
+  
+  resource_to_telemetry_conversion = true
+  add_metric_suffixes = false
+}
+
+prometheus.remote_write "local" {
+  endpoint {
+    url = "http://traefik-prometheus:9090/api/v1/write"
+    
+    queue_config {
+      capacity = 10000
+      max_shards = 10
+      min_shards = 1
+      max_samples_per_send = 5000
+      batch_send_deadline = "5s"
+      min_backoff = "30ms"
+      max_backoff = "5s"
+    }
+  }
+}
+
+// =====================================================
+// TRACES → TEMPO
+// =====================================================
+otelcol.exporter.otlp "tempo" {
+  client {
+    endpoint = "tempo:4317"
+    tls { insecure = true }
+  }
+}
+
+// =====================================================
+// DEBUG AUDIT (Sampling para producción)
+// =====================================================
+otelcol.exporter.debug "audit" {
+  verbosity = "normal"
+  sampling_initial = 10
+  sampling_thereafter = 100
+}
+
+// =====================================================
+// ALLOY SELF-MONITORING
+// =====================================================
+prometheus.exporter.self "alloy" { }
+
+prometheus.scrape "alloy_metrics" {
+  targets = prometheus.exporter.self.alloy.targets
+  forward_to = [prometheus.remote_write.local.receiver]
+}
+
+// =====================================================
+// LOGS (Loki Discovery & Process)
+// =====================================================
+discovery.docker "containers" {
+  host = "unix:///var/run/docker.sock"
+  refresh_interval = "10s"
+}
+
+// Relabel para crear labels útiles desde metadata de Docker
+discovery.relabel "containers_relabel" {
+  targets = discovery.docker.containers.targets
+
+  // Extraer nombre del contenedor (sin la barra inicial)
+  rule {
+    source_labels = ["__meta_docker_container_name"]
+    regex         = "/(.*)"
+    target_label  = "container"
+  }
+}
+
+loki.source.docker "containers" {
+  host         = "unix:///var/run/docker.sock"
+  targets      = discovery.docker.containers.targets
+  relabel_rules = discovery.relabel.containers_relabel.rules
+  forward_to   = [loki.process.production_logs.receiver]
+}
+
+// =====================================================
+// DOCKER LOG PROCESSING
+// =====================================================
+loki.process "production_logs" {
+
+  // Parsear JSON de Monolog
+  stage.json {
+    expressions = {
+      message      = "message",
+      level        = "level_name",
+      channel      = "channel",
+      datetime     = "datetime",
+      service_name = "extra.service",
+      trace_id     = "context.trace_id",
+      environment  = "extra.environment",
+      http_method  = "context.http_method",
+      http_status  = "context.http_status",
+    }
+    drop_malformed = false
+  }
+
+  // Timestamp parsing
+  stage.timestamp {
+    source = "datetime"
+    format = "RFC3339"
+    action_on_failure = "skip"
+  }
+
+  // Filtrar ruido por contenido del mensaje
+  stage.drop {
+    source     = "message"
+    expression = ".*(GET /health|GET /metrics|GET /ping|healthcheck).*"
+  }
+
+  // Filtrar canales de bajo valor
+  stage.drop {
+    source     = "channel"
+    expression = "deprecation"
+  }
+
+  // Eliminar label container de Docker discovery antes de agregar service_name del JSON
+  stage.label_drop {
+    values = ["container"]
+  }
+
+  // Agregar labels extraídos del JSON
+  stage.labels {
+    values = {
+      service_name = "service_name",
+      level        = "level",
+      channel      = "channel",
+    }
+  }
+
+  // Agregar trace_id como campo estructurado (no como label por alta cardinalidad)
+  stage.output {
+    source = "trace_id"
+  }
+
+  // Filtrar console logs excepto errores (después de crear labels)
+  stage.match {
+    selector = "{channel=\"console\", level!=\"ERROR\"}"
+    action   = "drop"
+  }
+
+  // Filtrar logs de Doctrine excepto errores (después de crear labels)
+  stage.match {
+    selector = "{channel=\"doctrine\", level!=\"ERROR\"}"
+    action   = "drop"
+  }
+
+  forward_to = [loki.write.local.receiver]
+}
+
+loki.write "local" {
+  endpoint {
+    url = "http://loki:3100/loki/api/v1/push"
+  }
+  //external_labels = {
+  //    environment = env("ENVIRONMENT"),
+  //   cluster     = env("CLUSTER_NAME"),
+  //}
+}

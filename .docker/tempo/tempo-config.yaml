@@ -1,0 +1,64 @@
+stream_over_http_enabled: true
+
+usage_report:
+  reporting_enabled: false
+
+server:
+  http_listen_port: 3200
+
+distributor:
+  receivers:
+    otlp:
+      protocols:
+        http:
+          endpoint: 0.0.0.0:4318
+        grpc:
+          endpoint: 0.0.0.0:4317
+
+ingester:
+  lifecycler:
+    ring:
+      kvstore:
+        store: inmemory
+      replication_factor: 1
+  trace_idle_period: 30s
+  max_block_duration: 30s
+
+storage:
+  trace:
+    backend: local
+    local:
+      path: /var/tempo/traces
+    wal:
+      path: /var/tempo/wal
+
+query_frontend:
+  search:
+    max_duration: 0s
+
+compactor:
+  compaction:
+    block_retention: 24h
+
+metrics_generator:
+  registry:
+    external_labels:
+      source: tempo
+      cluster: local
+
+  storage:
+    path: /var/tempo/generator
+    remote_write:
+      - url: http://prometheus:9090/api/v1/write
+        send_exemplars: true
+
+  processor:
+    service_graphs:
+      wait: 10s
+      max_items: 10000
+    span_metrics: {}
+
+overrides:
+  defaults:
+    metrics_generator:
+      processors: [service-graphs, span-metrics]

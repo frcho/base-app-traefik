@@ -1,0 +1,177 @@
+services:
+
+  traefik:
+    image: traefik:v2.11
+    container_name: ${PROJECT_NAME}
+    hostname: ${PROJECT_NAME}
+    restart: unless-stopped
+    depends_on:
+      - dockerproxy
+    ports:
+        - "80:80"
+        - "443:443"
+        - "8080:8080"
+    volumes:
+      - ./traefik.yaml:/etc/traefik/traefik.yaml:ro
+      - ./conf.d:/etc/traefik/conf.d:ro
+    labels:
+        - "traefik.enable=true"
+        - "traefik.http.routers.${PROJECT_NAME}.rule=Host(`${DOMAIN_NAME}`)"
+        - "traefik.http.services.${PROJECT_NAME}.loadbalancer.server.port=8080"
+    networks:
+      - app
+      - internal
+
+  dockerproxy:
+    image: tecnativa/docker-socket-proxy
+    container_name: ${PROJECT_NAME}-dockerproxy
+    restart: unless-stopped
+    environment:
+      CONTAINERS: 1
+      INFO: 1
+      NETWORKS: 1
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    networks:
+      - internal
+
+  portainer:
+    image: portainer/portainer-ce:2.39.0-alpine
+    container_name: ${PROJECT_NAME}-portainer
+    restart: unless-stopped
+    command: -H tcp://dockerproxy:2375
+    volumes:
+      - portainer_data:/data
+    networks:
+      - internal
+      - app
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.${PROJECT_NAME}-portainer.rule=Host(`portainer-${DOMAIN_NAME}`)"
+      - "traefik.http.services.${PROJECT_NAME}-portainer.loadbalancer.server.port=9000"
+      - "traefik.docker.network=app"
+
+  mailhog:
+    image: mailhog/mailhog:latest
+    container_name: ${PROJECT_NAME}-mailhog
+    restart: unless-stopped
+    volumes:
+      - ./.docker/mailhog/maildir:/maildir
+    networks:
+      - internal
+      - app
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.${PROJECT_NAME}-mailhog.rule=Host(`mail-${DOMAIN_NAME}`)"
+      - "traefik.http.services.${PROJECT_NAME}-mailhog.loadbalancer.server.port=8025"
+      - "traefik.docker.network=app"
+
+  alloy:
+    image: grafana/alloy:v1.13.2
+    container_name: ${PROJECT_NAME}-alloy
+    restart: unless-stopped
+    command: ["run", "--server.http.listen-addr=0.0.0.0:12345", "--stability.level=experimental", "/etc/alloy/config.alloy"]
+    environment:
+      DOCKER_HOST: unix:///var/run/docker.sock
+      ALLOY_ANALYTICS_REPORTING_ENABLED: false
+    volumes:
+      - ./.docker/alloy/config.alloy:/etc/alloy/config.alloy:ro
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    depends_on:
+      - prometheus
+      - loki
+      - tempo
+    networks:
+      - internal
+      - app
+    ports:
+      - "4317:4317"
+      - "4318:4318"
+
+  prometheus:
+    image: prom/prometheus:v3.10.0
+    container_name: ${PROJECT_NAME}-prometheus
+    restart: unless-stopped
+    ports:
+      - "9090:9090"
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.${PROJECT_NAME}-prometheus.rule=Host(`prometheus-${DOMAIN_NAME}`)"
+      - "traefik.http.services.${PROJECT_NAME}-prometheus.loadbalancer.server.port=9090"
+      - "traefik.docker.network=app"
+    command:
+      - "--config.file=/etc/prometheus/prometheus.yml"
+      - "--storage.tsdb.path=/prometheus"
+      - "--web.enable-remote-write-receiver"
+    volumes:
+      - ./.docker/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus_data:/prometheus
+    networks:
+      - app
+      - internal
+
+  loki:
+    image: grafana/loki:3.5.11
+    container_name: ${PROJECT_NAME}-loki
+    restart: unless-stopped
+    command: ["-config.file=/etc/loki/local-config.yaml"]
+    environment:
+      - LOKI_ANALYTICS_REPORTING_ENABLED=false
+    volumes:
+      - ./.docker/loki/loki-config.yaml:/etc/loki/local-config.yaml:ro
+      - loki_data:/loki
+    networks:
+      - internal
+
+  tempo:
+    image: grafana/tempo:2.10.1
+    container_name: ${PROJECT_NAME}-tempo
+    restart: unless-stopped
+    command: ["-config.file=/etc/tempo-config.yaml"]
+    volumes:
+      - ./.docker/tempo/tempo-config.yaml:/etc/tempo-config.yaml:ro
+      - tempo_data:/var/tempo
+    networks:
+      - internal
+
+  grafana:
+    image: grafana/grafana:12.3.4
+    container_name: ${PROJECT_NAME}-grafana
+    restart: unless-stopped
+    environment:
+      GF_AUTH_ANONYMOUS_ENABLED: "true"
+      GF_SECURITY_ALLOW_EMBEDDING: "true"
+      GF_SECURITY_ADMIN_USER: "admin"
+      GF_SECURITY_ADMIN_PASSWORD: "admin"
+      GF_ANALYTICS_REPORTING_ENABLED: false
+      GF_ANALYTICS_CHECK_FOR_UPDATES: false
+      GF_ANALYTICS_CHECK_FOR_PLUGIN_UPDATES: false
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./.docker/grafana/provisioning:/etc/grafana/provisioning:ro
+    networks:
+      - internal
+      - app
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.${PROJECT_NAME}-grafana.rule=Host(`grafana-${DOMAIN_NAME}`)"
+      - "traefik.http.services.${PROJECT_NAME}-grafana.loadbalancer.server.port=3000"
+      - "traefik.docker.network=app"
+
+volumes:
+  portainer_data:
+    driver: local
+  prometheus_data:
+    driver: local
+  loki_data:
+    driver: local
+  tempo_data:
+    driver: local
+  grafana_data:
+    driver: local
+
+networks:
+  app:
+    external: true
+  internal:
+    internal: true

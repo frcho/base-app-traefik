@@ -8,8 +8,17 @@ api:
 entryPoints:
   http:
     address: ":80"
+    # http:
+    #   middlewares:
+    #     # - traefik-block-ua@file
+    # #     - traefik-plugin-fail2ban@file
+    #     - traefik-plugin-blockuseragent@file
   https:
     address: ":443"
+    # http:
+    #   middlewares:
+    #     - traefik-plugin-fail2ban@file
+    #     - traefik-plugin-blockuseragent@file
   traefik:
     address: ":8080"
 
@@ -22,7 +31,20 @@ log:
   filePath: /tmp/traefik.log
   format: common
 
-accessLog: {}
+# Limiting the Logs to Specific Fields
+# accessLog:
+#   filePath: /tmp/access.log
+#   format: json
+#   fields:
+#     defaultMode: keep
+#     names:
+#       ClientUsername: drop
+#     headers:
+#       defaultMode: keep
+#       names:
+#         User-Agent: keep
+#         Authorization: drop
+#         Content-Type: keep
 
 providers:
   docker:
@@ -35,3 +57,15 @@ providers:
   file:
     directory: /etc/traefik/conf.d/
     watch: true
+
+# experimental:
+#   plugins:
+#     traefik-plugin-fail2ban:
+#       moduleName: "github.com/juitde/traefik-plugin-fail2ban"
+#       version: "v0.2.0"
+#     traefik-plugin-blockuseragent:
+#       moduleName: "github.com/agence-gaya/traefik-plugin-blockuseragent"
+#       version: "v0.1.7"
+#     traefik-block-ua:
+#       moduleName: "github.com/kucjac/traefik-block-ua"
+#       version: "v0.1.0"
