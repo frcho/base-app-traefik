@@ -2,3 +2,5 @@ cert
 
 debug
 *.env
+prod/traefik.yaml
+prod/acme.json
