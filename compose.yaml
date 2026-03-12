@@ -1,7 +1,7 @@
 services:
 
   traefik:
-    image: traefik:v2.11
+    image: traefik:v2.11.40
     container_name: ${PROJECT_NAME}
     hostname: ${PROJECT_NAME}
     restart: unless-stopped
@@ -12,15 +12,29 @@ services:
         - "443:443"
         - "8080:8080"
     volumes:
-      - ./traefik.yaml:/etc/traefik/traefik.yaml:ro
-      - ./conf.d:/etc/traefik/conf.d:ro
+      - /etc/localtime:/etc/localtime:ro
+      - /etc/timezone:/etc/timezone:ro
+      - ./${ENVIRONMENT}/traefik.yaml:/etc/traefik/traefik.yaml:ro
+      - ./${ENVIRONMENT}/acme:/etc/traefik/acme
+      - ./${ENVIRONMENT}/conf.d/:/etc/traefik/conf.d/
     labels:
         - "traefik.enable=true"
         - "traefik.http.routers.${PROJECT_NAME}.rule=Host(`${DOMAIN_NAME}`)"
+        - "traefik.http.routers.${PROJECT_NAME}.entrypoints=${TRAEFIK_ENTRYPOINTS:-http}"
+        - "traefik.http.routers.${PROJECT_NAME}.tls=${TRAEFIK_TLS:-false}"
+        - "traefik.http.routers.${PROJECT_NAME}.tls.certresolver=${TRAEFIK_CERT_RESOLVER:-}"
+        - "traefik.http.routers.${PROJECT_NAME}.middlewares=${TRAEFIK_MIDDLEWARES:-}"
         - "traefik.http.services.${PROJECT_NAME}.loadbalancer.server.port=8080"
     networks:
       - app
       - internal
+    deploy:
+      resources:
+        limits:
+          cpus: '0.25'
+          memory: 256M
+        reservations:
+          memory: 128M
 
   dockerproxy:
     image: tecnativa/docker-socket-proxy
@@ -34,6 +48,13 @@ services:
       - /var/run/docker.sock:/var/run/docker.sock:ro
     networks:
       - internal
+    deploy:
+      resources:
+        limits:
+          cpus: '0.10'
+          memory: 64M
+        reservations:
+          memory: 32M
 
   portainer:
     image: portainer/portainer-ce:2.39.0-alpine
@@ -45,9 +66,22 @@ services:
     networks:
       - internal
       - app
+    deploy:
+      resources:
+        limits:
+          cpus: '0.50'
+          memory: 512M
+        reservations:
+          memory: 128M
+    profiles:
+      - tools
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.${PROJECT_NAME}-portainer.rule=Host(`portainer-${DOMAIN_NAME}`)"
+      - "traefik.http.routers.${PROJECT_NAME}-portainer.rule=Host(`portainer.${DOMAIN_NAME}`)"
+      - "traefik.http.routers.${PROJECT_NAME}-portainer.entrypoints=${TRAEFIK_ENTRYPOINTS:-http}"
+      - "traefik.http.routers.${PROJECT_NAME}-portainer.tls=${TRAEFIK_TLS:-false}"
+      - "traefik.http.routers.${PROJECT_NAME}-portainer.tls.certresolver=${TRAEFIK_CERT_RESOLVER:-}"
+      - "traefik.http.routers.${PROJECT_NAME}-portainer.middlewares=${TRAEFIK_MIDDLEWARES:-}"
       - "traefik.http.services.${PROJECT_NAME}-portainer.loadbalancer.server.port=9000"
       - "traefik.docker.network=app"
 
@@ -60,9 +94,22 @@ services:
     networks:
       - internal
       - app
+    deploy:
+      resources:
+        limits:
+          cpus: '0.10'
+          memory: 128M
+        reservations:
+          memory: 64M
+    profiles:
+      - mail
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.${PROJECT_NAME}-mailhog.rule=Host(`mail-${DOMAIN_NAME}`)"
+      - "traefik.http.routers.${PROJECT_NAME}-mailhog.rule=Host(`mail.${DOMAIN_NAME}`)"
+      - "traefik.http.routers.${PROJECT_NAME}-mailhog.entrypoints=${TRAEFIK_ENTRYPOINTS:-http}"
+      - "traefik.http.routers.${PROJECT_NAME}-mailhog.tls=${TRAEFIK_TLS:-false}"
+      - "traefik.http.routers.${PROJECT_NAME}-mailhog.tls.certresolver=${TRAEFIK_CERT_RESOLVER:-}"
+      - "traefik.http.routers.${PROJECT_NAME}-mailhog.middlewares=${TRAEFIK_MIDDLEWARES:-}"
       - "traefik.http.services.${PROJECT_NAME}-mailhog.loadbalancer.server.port=8025"
       - "traefik.docker.network=app"
 
@@ -84,6 +131,15 @@ services:
     networks:
       - internal
       - app
+    deploy:
+      resources:
+        limits:
+          cpus: '0.50'
+          memory: 512M
+        reservations:
+          memory: 256M
+    profiles:
+      - monitoring
     ports:
       - "4317:4317"
       - "4318:4318"
@@ -94,11 +150,6 @@ services:
     restart: unless-stopped
     ports:
       - "9090:9090"
-    labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.${PROJECT_NAME}-prometheus.rule=Host(`prometheus-${DOMAIN_NAME}`)"
-      - "traefik.http.services.${PROJECT_NAME}-prometheus.loadbalancer.server.port=9090"
-      - "traefik.docker.network=app"
     command:
       - "--config.file=/etc/prometheus/prometheus.yml"
       - "--storage.tsdb.path=/prometheus"
@@ -109,6 +160,24 @@ services:
     networks:
       - app
       - internal
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 1024M
+        reservations:
+          memory: 512M
+    profiles:
+      - monitoring
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.${PROJECT_NAME}-prometheus.rule=Host(`prometheus.${DOMAIN_NAME}`)"
+      - "traefik.http.routers.${PROJECT_NAME}-prometheus.entrypoints=${TRAEFIK_ENTRYPOINTS:-http}"
+      - "traefik.http.routers.${PROJECT_NAME}-prometheus.tls=${TRAEFIK_TLS:-false}"
+      - "traefik.http.routers.${PROJECT_NAME}-prometheus.tls.certresolver=${TRAEFIK_CERT_RESOLVER:-}"
+      - "traefik.http.routers.${PROJECT_NAME}-prometheus.middlewares=${TRAEFIK_MIDDLEWARES:-}"
+      - "traefik.http.services.${PROJECT_NAME}-prometheus.loadbalancer.server.port=9090"
+      - "traefik.docker.network=app"
 
   loki:
     image: grafana/loki:3.5.11
@@ -122,6 +191,15 @@ services:
       - loki_data:/loki
     networks:
       - internal
+    deploy:
+      resources:
+        limits:
+          cpus: '0.50'
+          memory: 512M
+        reservations:
+          memory: 256M
+    profiles:
+      - monitoring
 
   tempo:
     image: grafana/tempo:2.10.1
@@ -133,6 +211,15 @@ services:
       - tempo_data:/var/tempo
     networks:
       - internal
+    deploy:
+      resources:
+        limits:
+          cpus: '0.50'
+          memory: 512M
+        reservations:
+          memory: 256M
+    profiles:
+      - monitoring
 
   grafana:
     image: grafana/grafana:12.3.4
@@ -152,9 +239,22 @@ services:
     networks:
       - internal
       - app
+    deploy:
+      resources:
+        limits:
+          cpus: '0.50'
+          memory: 512M
+        reservations:
+          memory: 256M
+    profiles:
+      - monitoring
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.${PROJECT_NAME}-grafana.rule=Host(`grafana-${DOMAIN_NAME}`)"
+      - "traefik.http.routers.${PROJECT_NAME}-grafana.rule=Host(`grafana.${DOMAIN_NAME}`)"
+      - "traefik.http.routers.${PROJECT_NAME}-grafana.entrypoints=${TRAEFIK_ENTRYPOINTS:-http}"
+      - "traefik.http.routers.${PROJECT_NAME}-grafana.tls=${TRAEFIK_TLS:-false}"
+      - "traefik.http.routers.${PROJECT_NAME}-grafana.tls.certresolver=${TRAEFIK_CERT_RESOLVER:-}"
+      - "traefik.http.routers.${PROJECT_NAME}-grafana.middlewares=${TRAEFIK_MIDDLEWARES:-}"
       - "traefik.http.services.${PROJECT_NAME}-grafana.loadbalancer.server.port=3000"
       - "traefik.docker.network=app"
 

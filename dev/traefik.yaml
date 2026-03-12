@@ -58,14 +58,14 @@ providers:
     directory: /etc/traefik/conf.d/
     watch: true
 
-# experimental:
-#   plugins:
-#     traefik-plugin-fail2ban:
-#       moduleName: "github.com/juitde/traefik-plugin-fail2ban"
-#       version: "v0.2.0"
-#     traefik-plugin-blockuseragent:
-#       moduleName: "github.com/agence-gaya/traefik-plugin-blockuseragent"
-#       version: "v0.1.7"
+experimental:
+  plugins:
+    traefik-plugin-fail2ban:
+      moduleName: "github.com/juitde/traefik-plugin-fail2ban"
+      version: "v0.2.0"
+    traefik-plugin-blockuseragent:
+      moduleName: "github.com/agence-gaya/traefik-plugin-blockuseragent"
+      version: "v0.1.7"
 #     traefik-block-ua:
 #       moduleName: "github.com/kucjac/traefik-block-ua"
 #       version: "v0.1.0"

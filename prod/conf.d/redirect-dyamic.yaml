@@ -1,0 +1,49 @@
+# Se agrupan conjunto de reglas que permite redirigir
+# http -> https
+# www  -> non-www -> https
+http:
+  # Add the router
+  routers:
+    http-catchall:
+      rule: 'HostRegexp(`{host:(www\.)?.+}`)'
+      entryPoints:
+        - http
+      middlewares:
+        - redirect-to-https
+      service: noop
+      priority: 1
+    https-catchall:
+      service: noop
+      rule: 'HostRegexp(`{host:(www\.).+}`)'
+      entryPoints:
+        - https
+      middlewares:
+        - redirect-to-https
+      tls: {}
+      priority: 2
+  # Add the middleware
+  middlewares:
+    redirect-to-https:
+      redirectRegex:
+        regex: '^https?://(?:www\.)?(.+)'
+        replacement: 'https://${1}'
+        permanent: true
+    redirect-to-http:
+      redirectRegex:
+        regex: '^http?://(?:www\.)?(.+)'
+        replacement: 'http://${1}'
+    redirect:
+      redirectScheme:
+        scheme: https
+        permanent: true
+    traefik-plugin-blockuseragent:
+      plugin:
+        traefik-plugin-blockuseragent:
+          Regex:
+            - "ClaudeBot"
+# Add the service
+  services:
+    noop:
+      loadBalancer:
+        servers:
+          - url: 'http://192.168.0.1:666'

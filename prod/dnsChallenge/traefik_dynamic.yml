@@ -1,0 +1,20 @@
+http:
+  routers:
+    acme-catchall:
+      rule: "HostRegexp(`{subdomain:[a-z0-9-]+}.domain.com`)"
+      entryPoints:
+        - https
+      service: acme-service
+      priority: 1
+      tls:
+        certResolver: dnsresolver
+        domains:
+          - main: "*.domain.com"
+            sans:
+              - domain.com
+          - main: "*.app.domain.com"
+  services:
+    acme-service:
+      loadBalancer:
+        servers:
+          - url: "http://127.0.0.1:65535"

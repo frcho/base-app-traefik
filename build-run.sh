@@ -10,6 +10,6 @@ else
 fi
 
 echo "Starting container"
-docker-compose up -d
+docker compose up -d
 echo "Container started"
 
