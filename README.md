@@ -71,6 +71,17 @@ Todos los servicios tienen límites estrictos en `compose.yaml` (Ej: Prometheus 
 
 ---
 
+## 🛠️ Herramientas Recomendadas
+
+Para monitorear los recursos de los contenedores en tiempo real desde la terminal (similar a `top`), se recomienda instalar `ctop`:
+
+```bash
+sudo wget https://github.com/bcicen/ctop/releases/download/v0.7.7/ctop-0.7.7-linux-amd64 -O /usr/local/bin/ctop
+sudo chmod +x /usr/local/bin/ctop
+```
+
+---
+
 ## 🔗 Acceso a Servicios
 
 URLs por defecto (usando `traefik.localhost`):

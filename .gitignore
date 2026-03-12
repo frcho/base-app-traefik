@@ -1,6 +1,6 @@
 cert
-
 debug
+.env
 *.env
 prod/traefik.yaml
 prod/acme.json
