@@ -17,6 +17,14 @@ services:
       - ./${ENVIRONMENT}/traefik.yaml:/etc/traefik/traefik.yaml:ro
       - ./${ENVIRONMENT}/acme:/etc/traefik/acme
       - ./${ENVIRONMENT}/conf.d/:/etc/traefik/conf.d/
+    environment:
+      - AWS_EC2_METADATA_DISABLED=false
+        #- AWS_EC2_METADATA_SERVICE_ENDPOINT=http://169.254.169.254
+        #- AWS_EC2_METADATA_SERVICE_ENDPOINT_MODE=IPv4
+      - AWS_REGION=us-east-1
+      - AWS_ASSUME_ROLE_ARN=arn:aws:iam::123456789123:role/tools-prod-core-traefik-dns-manager-role
+      # Opcional pero muy útil si hay muchas zonas:
+      - AWS_HOSTED_ZONE_ID=<ROUTE_53_ZONE_ID>
     labels:
         - "traefik.enable=true"
         - "traefik.http.routers.${PROJECT_NAME}.rule=Host(`${DOMAIN_NAME}`)"
