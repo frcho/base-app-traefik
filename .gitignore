@@ -2,5 +2,6 @@ cert
 debug
 .env
 *.env
+.docker/mailpit
 prod/traefik.yaml
 prod/acme.json

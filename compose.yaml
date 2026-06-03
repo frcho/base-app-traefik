@@ -120,6 +120,35 @@ services:
       - "traefik.http.routers.${PROJECT_NAME}-mailhog.middlewares=${TRAEFIK_MIDDLEWARES:-}"
       - "traefik.http.services.${PROJECT_NAME}-mailhog.loadbalancer.server.port=8025"
       - "traefik.docker.network=app"
+  mailpit:
+    image: axllent/mailpit:v1.29
+    container_name: ${PROJECT_NAME}-mailpit
+    restart: unless-stopped
+    environment:
+      - MP_DATABASE=/data/mailpit.db
+    volumes:
+      - ./.docker/mailpit/maildir:/data
+    networks:
+      - internal
+      - app
+    deploy:
+      resources:
+        limits:
+          cpus: '0.10'
+          memory: 128M
+        reservations:
+          memory: 64M
+    profiles:
+      - mail
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.${PROJECT_NAME}-mailpit.rule=Host(`mailpit.${DOMAIN_NAME}`)"
+      - "traefik.http.routers.${PROJECT_NAME}-mailpit.entrypoints=${TRAEFIK_ENTRYPOINTS:-http}"
+      - "traefik.http.routers.${PROJECT_NAME}-mailpit.tls=${TRAEFIK_TLS:-false}"
+      - "traefik.http.routers.${PROJECT_NAME}-mailpit.tls.certresolver=${TRAEFIK_CERT_RESOLVER:-}"
+      - "traefik.http.routers.${PROJECT_NAME}-mailpit.middlewares=${TRAEFIK_MIDDLEWARES:-}"
+      - "traefik.http.services.${PROJECT_NAME}-mailpit.loadbalancer.server.port=8025"
+      - "traefik.docker.network=app"
 
   alloy:
     image: grafana/alloy:v1.13.2
